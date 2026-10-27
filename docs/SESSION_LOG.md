@@ -11,3 +11,4 @@ Pending: Supabase project, Netlify site and env, first venue. See RUNBOOK. Open 
 
 ## 2026-10-27 v0.1.1
 Tomato favicon (public/favicon.svg) linked from index.html. Version bumped to 0.1.1.
+Sign-in: real error text shown, and an Email me a sign-in link button (magic link, existing users only).
