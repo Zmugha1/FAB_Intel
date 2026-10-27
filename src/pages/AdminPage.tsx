@@ -52,13 +52,32 @@ function SignIn() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [sent, setSent] = useState(false)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
-    const { error: err } = await getSupabase().auth.signInWithPassword({ email, password })
-    if (err) setError('Email or password is not right.')
+    const { error: err } = await getSupabase().auth.signInWithPassword({ email: email.trim(), password })
+    // Show the real reason so a setup problem is not mistaken for a wrong password.
+    if (err) setError(err.message === 'Invalid login credentials' ? 'Email or password is not right.' : `Sign-in failed: ${err.message}`)
+    setBusy(false)
+  }
+
+  async function sendLink() {
+    if (!email.trim()) {
+      setError('Enter your email first.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    // shouldCreateUser false: only people already added in Supabase can get a link.
+    const { error: err } = await getSupabase().auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: false, emailRedirectTo: `${window.location.origin}/admin` },
+    })
+    if (err) setError(`Could not send the link: ${err.message}`)
+    else setSent(true)
     setBusy(false)
   }
 
@@ -69,7 +88,9 @@ function SignIn() {
         <label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" /></label>
         <label>Password<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" /></label>
         {error && <p className="callout warn">{error}</p>}
-        <button className="btn" disabled={busy}>Sign in</button>
+        {sent && <p className="callout ok">Check your email for a sign-in link. Open it on this device.</p>}
+        <button className="btn" disabled={busy || !password}>Sign in</button>
+        <button type="button" className="btn ghost" disabled={busy} onClick={sendLink}>Email me a sign-in link</button>
       </form>
     </Shell>
   )
