@@ -8,3 +8,6 @@ Checks: 16 unit tests pass. Type check, lint and build clean. No server names in
 Migration applied on local Postgres with Supabase default grants simulated. RLS: owner sees only their venue,
 admin sees all, anon sees nothing, staff_pin_hash not readable by signed in users.
 Pending: Supabase project, Netlify site and env, first venue. See RUNBOOK. Open items in TECH_DEBT.
+
+## 2026-10-27 v0.1.1
+Tomato favicon (public/favicon.svg) linked from index.html. Version bumped to 0.1.1.
