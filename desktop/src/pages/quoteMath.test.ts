@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { liveTotals } from "./quoteMath";
 
-const rules = { margin_floor_bp: 3500, approve_over_cents: 250000, staff_quotes_need_owner: true, tax_rate_bp: 550, quote_valid_days: 14, follow_up_days: 3 };
+const rules = { margin_floor_bp: 3500, approve_over_cents: 250000, staff_quotes_need_owner: true, tax_rate_bp: 550, quote_valid_days: 14, follow_up_days: 3, staff_see_costs: null };
 
 describe("liveTotals", () => {
   it("matches the backend test case to the cent", () => {
@@ -17,5 +17,14 @@ describe("liveTotals", () => {
   });
   it("sends staff quotes to the owner", () => {
     expect(liveTotals([{ qty: "10", cost: "1", price: "2", taxable: true }], rules, true).reasons[0]).toContain("staff");
+  });
+  it("shows no margin to staff when costs are hidden", () => {
+    const t = liveTotals([{ qty: "10", cost: "", price: "2", taxable: true }], rules, true, true);
+    expect(t.margin).toBeNull();
+    expect(t.subtotal).toBe(2000);
+    expect(t.reasons.some((r) => r.includes("%"))).toBe(false);
+  });
+  it("adds no tax when the owner charges none", () => {
+    expect(liveTotals([{ qty: "1", cost: "1", price: "2", taxable: true }], { ...rules, tax_rate_bp: 0 }, false).tax).toBe(0);
   });
 });

@@ -1,6 +1,6 @@
 [package]
 name = "fab-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "FAB Intel desktop: database, sign-in, quotes, brief and ROI. No UI code."
 

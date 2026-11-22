@@ -3,6 +3,7 @@ import { PageProps } from "../App";
 import { RoiRow, call } from "../ipc";
 import { today } from "../format";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
 const show = (v: number | null, unit: string) => {
   if (v === null) return "Not yet";
@@ -41,7 +42,7 @@ export default function Roi({ changed }: PageProps) {
       {msg && <p className="err">{msg}</p>}
       <div className="card scroll">
         <table className="tbl">
-          <thead><tr><th>Measure</th><th>Starting number</th><th>Now</th><th>How it is measured</th></tr></thead>
+          <thead><tr><th>Measure</th><th>Starting number<Tip text="Your number from before FAB Intel, from your STZ interview or your own records. Leave it missing rather than guess." /></th><th>Now<Tip text="Measured from your FAB Intel records. Shows a dash until there is enough real data. Sample data never counts." /></th><th>How it is measured</th></tr></thead>
           <tbody>
             {data?.map((r) => (
               <tr key={r.key}>

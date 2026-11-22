@@ -3,6 +3,7 @@ import { PageProps } from "../App";
 import { call, Contact, Project } from "../ipc";
 import { BUSINESSES, bizName } from "../format";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
 const COLUMNS: [string, string][] = [["none", "Art and setup"], ["sent", "Proof sent"], ["revise", "Changes asked"], ["approved", "Approved"]];
 
@@ -48,9 +49,9 @@ export default function Projects({ user, biz, changed }: PageProps) {
               </select>
             </div>
             <div className="f"><label>Business</label><select className="in" value={edit.business} onChange={(e) => setEdit({ ...edit, business: e.target.value })}>{mine.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></div>
-            <div className="f"><label>In-hands date</label><input type="date" className="in" value={edit.in_hands} onChange={(e) => setEdit({ ...edit, in_hands: e.target.value })} /></div>
-            <div className="f"><label>Art link (Google Drive, Dropbox)</label><input className="in" value={edit.art_link} onChange={(e) => setEdit({ ...edit, art_link: e.target.value })} /></div>
-            <div className="f"><label>Proof</label><select className="in" value={edit.proof} onChange={(e) => setEdit({ ...edit, proof: e.target.value })}>{COLUMNS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></div>
+            <div className="f"><label>In-hands date<Tip text="The day the customer must have the order. The Morning Brief flags it once it is 7 days away and the proof is not approved." /></label><input type="date" className="in" value={edit.in_hands} onChange={(e) => setEdit({ ...edit, in_hands: e.target.value })} /></div>
+            <div className="f"><label>Art link (Google Drive, Dropbox)<Tip text="Paste a share link. FAB Intel keeps the link only. The art file stays where it is." /></label><input className="in" value={edit.art_link} onChange={(e) => setEdit({ ...edit, art_link: e.target.value })} /></div>
+            <div className="f"><label>Proof<Tip text="Where the proof stands. Moving a project to Changes asked adds one to its revision count." /></label><select className="in" value={edit.proof} onChange={(e) => setEdit({ ...edit, proof: e.target.value })}>{COLUMNS.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></div>
             <div className="f"><label>Status</label><select className="in" value={edit.status} onChange={(e) => setEdit({ ...edit, status: e.target.value })}><option value="open">Open</option><option value="delivered">Delivered</option><option value="closed">Closed</option></select></div>
           </div>
           <label className="check"><input type="checkbox" checked={edit.art_ok} onChange={(e) => setEdit({ ...edit, art_ok: e.target.checked })} />Art checked: sharp enough to print, right colors</label>

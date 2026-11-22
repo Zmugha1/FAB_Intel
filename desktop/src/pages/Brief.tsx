@@ -2,6 +2,7 @@ import { PageProps } from "../App";
 import { BriefItem } from "../ipc";
 import { bizName, today } from "../format";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
 const STRIPE: Record<string, string> = { act: "warn", watch: "hold", gap: "" };
 const LABEL: Record<string, string> = { act: "Needs you today", watch: "Follow up", gap: "Setup gap" };
@@ -19,9 +20,9 @@ export default function Brief({ user, biz, go }: PageProps) {
       </div>
       {error && <p className="err">{error}</p>}
       <div className="grid g4">
-        <div className="card kpi"><span className="v">{count("act")}</span><span className="l">Need you today</span></div>
-        <div className="card kpi"><span className="v">{count("watch")}</span><span className="l">Follow-ups</span></div>
-        {user.role === "owner" && <div className="card kpi"><span className="v">{count("gap")}</span><span className="l">Setup gaps</span></div>}
+        <div className="card kpi"><span className="v">{count("act")}</span><span className="l">Need you today<Tip text="Approvals, approved quotes to send, overdue invoices, and projects 7 days or less from in-hands with the proof not approved." /></span></div>
+        <div className="card kpi"><span className="v">{count("watch")}</span><span className="l">Follow-ups<Tip text="Sent quotes past your follow-up days, quotes waiting on the owner, draft invoices, proofs that need changes, and art not checked yet." /></span></div>
+        {user.role === "owner" && <div className="card kpi"><span className="v">{count("gap")}</span><span className="l">Setup gaps<Tip text="Questions and starting numbers FAB Intel still needs from you. Owner only." /></span></div>}
       </div>
       <div className="list">
         {data && items.length === 0 && <p className="muted">Nothing needs you right now.</p>}

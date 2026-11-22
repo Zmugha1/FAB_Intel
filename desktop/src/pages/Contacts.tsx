@@ -3,6 +3,7 @@ import { PageProps } from "../App";
 import { call, Contact } from "../ipc";
 import { BUSINESSES, bizName } from "../format";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
 const blank = (biz: string[]): Contact => ({ id: 0, name: "", company: "", email: "", phone: "", businesses: biz, source: "", notes: "", sample: false });
 
@@ -57,10 +58,10 @@ export default function Contacts({ user, biz }: PageProps) {
             <div className="f"><label>Company</label><input className="in" value={edit.company} onChange={(e) => setEdit({ ...edit, company: e.target.value })} /></div>
             <div className="f"><label>Email</label><input className="in" value={edit.email} onChange={(e) => setEdit({ ...edit, email: e.target.value })} /></div>
             <div className="f"><label>Phone</label><input className="in" value={edit.phone} onChange={(e) => setEdit({ ...edit, phone: e.target.value })} /></div>
-            <div className="f"><label>Source</label><input className="in" placeholder="Referral, event, screenshot" value={edit.source} onChange={(e) => setEdit({ ...edit, source: e.target.value })} /></div>
+            <div className="f"><label>Source<Tip text="How this contact reached you. Useful later for knowing which events and referrals bring work." /></label><input className="in" placeholder="Referral, event, screenshot" value={edit.source} onChange={(e) => setEdit({ ...edit, source: e.target.value })} /></div>
           </div>
           <div className="row">
-            <span className="lbl">Businesses</span>
+            <span className="lbl">Businesses<Tip text="Which of your businesses this person buys from. Staff see a contact only when it is tagged with a business they work in." /></span>
             {mine.map(([k, n]) => (
               <label className="check" key={k}><input type="checkbox" checked={edit.businesses.includes(k)} onChange={() => toggle(k)} />{n}</label>
             ))}

@@ -26,7 +26,10 @@ pub fn brief(conn: &Connection, user: &User, today: &str, now: i64) -> Result<Ve
     let mut out = Vec::new();
 
     if user.is_owner() && r.tax_rate_bp.is_none() {
-        out.push(item("gap", "Set your sales tax rate".into(), "Quotes show no tax until you set it on the Rules page.".into(), "rules", ""));
+        out.push(item("gap", "Answer: what is your sales tax rate?".into(), "Quotes show no tax until you answer on the Rules page, under Questions for you.".into(), "rules", ""));
+    }
+    if user.is_owner() && r.staff_see_costs.is_none() {
+        out.push(item("gap", "Answer: should staff see vendor costs and margins?".into(), "Staff see them until you answer on the Rules page, under Questions for you.".into(), "rules", ""));
     }
 
     for q in quotes(conn, user)? {

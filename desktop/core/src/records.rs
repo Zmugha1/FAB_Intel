@@ -173,7 +173,13 @@ pub struct Quote {
     pub sent_at: Option<i64>,
     pub created_at: i64,
     pub sample: bool,
+    /// True when the owner has said staff do not see costs and the viewer is staff.
+    /// Costs read as zero and margin as empty for that viewer.
+    pub costs_hidden: bool,
 }
+
+/// The margin reason as staff see it when costs are hidden.
+const MARGIN_HIDDEN: &str = "Margin needs the owner's check.";
 
 fn lines_for(conn: &Connection, quote_id: i64) -> Result<Vec<Line>, String> {
     let mut stmt = conn
@@ -237,7 +243,23 @@ pub fn quote(conn: &Connection, user: &User, id: i64) -> Result<Quote, String> {
     let lines = lines_for(conn, id)?;
     let totals = quote::totals(&lines, r.tax_rate_bp);
     let checklist: serde_json::Value = serde_json::from_str(&row.6).unwrap_or_default();
-    let needs_owner = quote::approval_reasons(&totals, &r, is_staff(conn, &row.8));
+    let mut needs_owner = quote::approval_reasons(&totals, &r, is_staff(conn, &row.8));
+    if lines.iter().any(|l| l.unit_cost_cents == 0) {
+        needs_owner.push("A line has no unit cost yet.".to_owned());
+    }
+    let costs_hidden = !user.is_owner() && !r.staff_costs_visible();
+    let (lines, totals) = if costs_hidden {
+        for reason in needs_owner.iter_mut() {
+            if reason.starts_with("Margin") || reason.starts_with("A line has no unit cost") {
+                *reason = MARGIN_HIDDEN.to_owned();
+            }
+        }
+        needs_owner.dedup();
+        let masked: Vec<Line> = lines.into_iter().map(|l| Line { unit_cost_cents: 0, ..l }).collect();
+        (masked, Totals { cost_cents: 0, margin_bp: None, ..totals })
+    } else {
+        (lines, totals)
+    };
     Ok(Quote {
         id: row.0,
         number: row.1,
@@ -257,6 +279,7 @@ pub fn quote(conn: &Connection, user: &User, id: i64) -> Result<Quote, String> {
         sent_at: row.11,
         created_at: row.12,
         sample: row.13 == 1,
+        costs_hidden,
     })
 }
 
@@ -304,6 +327,22 @@ pub fn save_quote(conn: &Connection, user: &User, q: &QuoteInput, now: i64) -> R
         }
     }
     let checklist = if q.checklist.is_object() { q.checklist.to_string() } else { "{}".to_owned() };
+    let hide_costs = !user.is_owner() && !rules(conn).staff_costs_visible();
+    // Staff who cannot see costs send zero. Keep the cost already saved on a line with the same item.
+    let mut kept: Vec<Line> = Vec::new();
+    if hide_costs && q.id != 0 {
+        kept = lines_for(conn, q.id)?;
+    }
+    let cost_for = |i: usize, l: &Line| -> i64 {
+        if !hide_costs {
+            return l.unit_cost_cents;
+        }
+        let same = |k: &Line| k.item.trim().eq_ignore_ascii_case(l.item.trim());
+        match kept.get(i) {
+            Some(k) if same(k) => k.unit_cost_cents,
+            _ => kept.iter().find(|k| same(k)).map(|k| k.unit_cost_cents).unwrap_or(0),
+        }
+    };
     let id = if q.id == 0 {
         let number = next_number(conn, "quotes", "Q")?;
         conn.execute(
@@ -317,7 +356,8 @@ pub fn save_quote(conn: &Connection, user: &User, q: &QuoteInput, now: i64) -> R
         id
     } else {
         let existing = quote(conn, user, q.id)?;
-        if existing.status != "draft" {
+        let owner_fixing = user.is_owner() && existing.status == "waiting_approval";
+        if existing.status != "draft" && !owner_fixing {
             return Err("Only a draft can be edited. Ask the owner to send it back to draft.".into());
         }
         conn.execute(
@@ -329,10 +369,10 @@ pub fn save_quote(conn: &Connection, user: &User, q: &QuoteInput, now: i64) -> R
         log(conn, now, &user.id, "edited", "quote", Some(q.id), &existing.number)?;
         q.id
     };
-    for l in &q.lines {
+    for (i, l) in q.lines.iter().enumerate() {
         conn.execute(
             "INSERT INTO quote_lines (quote_id, item, vendor, decoration, qty, unit_cost_cents, unit_price_cents, taxable) VALUES (?1,?2,?3,?4,?5,?6,?7,?8)",
-            params![id, l.item.trim(), l.vendor.trim(), l.decoration.trim(), l.qty, l.unit_cost_cents, l.unit_price_cents, l.taxable as i64],
+            params![id, l.item.trim(), l.vendor.trim(), l.decoration.trim(), l.qty, cost_for(i, l), l.unit_price_cents, l.taxable as i64],
         )
         .map_err(err)?;
     }
@@ -890,6 +930,46 @@ pub(crate) mod tests {
         a_contact(&conn, &owner, "FB");
         a_contact(&conn, &owner, "WH");
         assert_eq!(duplicates(&conn, &owner).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn hidden_costs_mask_for_staff_and_survive_staff_edits() {
+        let (conn, owner, staff) = people();
+        let c = a_contact(&conn, &owner, "FB");
+        crate::settings::set(&conn, true, "staff_see_costs", "0").unwrap();
+        // Owner prices the quote with costs.
+        let mut q = input(c, all_checked());
+        let id = save_quote(&conn, &owner, &q, 200).unwrap();
+        // Staff sees no cost and no margin.
+        let seen = quote(&conn, &staff, id).unwrap();
+        assert!(seen.costs_hidden);
+        assert!(seen.lines.iter().all(|l| l.unit_cost_cents == 0));
+        assert_eq!(seen.totals.margin_bp, None);
+        assert!(seen.needs_owner.iter().all(|r| !r.contains('%')));
+        // Staff edits the price and sends cost zero. The saved cost stays.
+        q.id = id;
+        q.lines[0].unit_cost_cents = 0;
+        q.lines[0].unit_price_cents += 100;
+        save_quote(&conn, &staff, &q, 300).unwrap();
+        let after = quote(&conn, &owner, id).unwrap();
+        assert!(!after.costs_hidden);
+        assert_eq!(after.lines[0].unit_cost_cents, input(c, all_checked()).lines[0].unit_cost_cents);
+        // A new staff line has no cost, so the owner is told.
+        q.lines.push(Line { item: "Koozie".into(), vendor: String::new(), decoration: String::new(), qty: 10, unit_cost_cents: 0, unit_price_cents: 300, taxable: true });
+        save_quote(&conn, &staff, &q, 400).unwrap();
+        assert!(quote(&conn, &owner, id).unwrap().needs_owner.iter().any(|r| r.contains("no unit cost")));
+    }
+
+    #[test]
+    fn owner_can_fix_a_quote_waiting_for_approval() {
+        let (conn, owner, staff) = people();
+        let c = a_contact(&conn, &owner, "FB");
+        let mut q = input(c, all_checked());
+        let id = save_quote(&conn, &staff, &q, 200).unwrap();
+        assert_eq!(quote_action(&conn, &staff, id, "submit", 210).unwrap(), "waiting_approval");
+        q.id = id;
+        assert!(save_quote(&conn, &staff, &q, 220).is_err());
+        save_quote(&conn, &owner, &q, 230).unwrap();
     }
 
     #[test]

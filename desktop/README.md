@@ -47,6 +47,14 @@ npm run tauri dev             # run on this computer
 npm run tauri build           # Windows installer (.msi and .exe), run on Windows
 ```
 
+On Windows, one script runs every check and opens the app with a manual test list:
+
+```
+.\desktop\scripts\dev-test.ps1 -Fresh     # checks, then a clean first run (old database moved aside)
+.\desktop\scripts\dev-test.ps1 -NoRun -Build   # checks and installers only
+.\desktop\scripts\dev-test.ps1 -Restore   # put the moved-aside database back
+```
+
 The database file is in the app data folder: `%APPDATA%\com.drdata.fabintel\fab-intel.db` on Windows.
 
 Version: keep `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`, `core/Cargo.toml`, `package.json` and `src/version.ts` in step.

@@ -1,7 +1,7 @@
 # Version source of truth: tauri.conf.json. Keep this version, package.json and src/version.ts in step.
 [package]
 name = "fab-intel"
-version = "0.1.0"
+version = "0.1.1"
 description = "FAB Intel desktop"
 edition = "2021"
 

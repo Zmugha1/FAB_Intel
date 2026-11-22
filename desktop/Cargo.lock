@@ -826,7 +826,7 @@ dependencies = [
 
 [[package]]
 name = "fab-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "argon2",
  "password-hash",
@@ -837,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "fab-intel"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fab-core",
  "rusqlite",

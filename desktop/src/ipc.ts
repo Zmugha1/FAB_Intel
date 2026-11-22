@@ -20,7 +20,7 @@ export type Totals = { subtotal_cents: number; cost_cents: number; tax_cents: nu
 export type Quote = {
   id: number; number: string; contact_id: number; contact: string; business: string; status: string;
   lines: Line[]; checklist: Record<string, boolean>; open_checklist: string[]; notes: string; totals: Totals;
-  needs_owner: string[]; created_by: string; approved_by: string | null; requested_at: number | null; sent_at: number | null; created_at: number; sample: boolean;
+  needs_owner: string[]; created_by: string; approved_by: string | null; requested_at: number | null; sent_at: number | null; created_at: number; sample: boolean; costs_hidden: boolean;
 };
 export type Invoice = {
   id: number; number: string; contact_id: number; contact: string; quote_id: number | null; business: string; amount_cents: number;
@@ -32,5 +32,5 @@ export type Project = {
 };
 export type BriefItem = { level: "act" | "watch" | "gap"; title: string; detail: string; view: string; business: string };
 export type RoiRow = { key: string; label: string; unit: string; baseline: number | null; note: string; now: number | null; how: string };
-export type Rules = { margin_floor_bp: number; approve_over_cents: number; staff_quotes_need_owner: boolean; tax_rate_bp: number | null; quote_valid_days: number; follow_up_days: number };
+export type Rules = { margin_floor_bp: number; approve_over_cents: number; staff_quotes_need_owner: boolean; tax_rate_bp: number | null; quote_valid_days: number; follow_up_days: number; staff_see_costs: boolean | null };
 export type LogRow = { at: number; user: string; action: string; entity: string; entity_id: number | null; detail: string };

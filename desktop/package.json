@@ -1,7 +1,7 @@
 {
   "name": "fab-intel-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "FAB Intel desktop. Version source of truth: src-tauri/tauri.conf.json. Keep package.json, Cargo.toml and src/version.ts in step.",
   "type": "module",
   "scripts": {

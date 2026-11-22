@@ -104,7 +104,7 @@ mod tests {
     use super::*;
 
     fn rules() -> Rules {
-        Rules { margin_floor_bp: 3500, approve_over_cents: 250_000, staff_quotes_need_owner: true, tax_rate_bp: Some(550), quote_valid_days: 14, follow_up_days: 3 }
+        Rules { margin_floor_bp: 3500, approve_over_cents: 250_000, staff_quotes_need_owner: true, staff_see_costs: None, tax_rate_bp: Some(550), quote_valid_days: 14, follow_up_days: 3 }
     }
 
     fn line(qty: i64, cost: i64, price: i64, taxable: bool) -> Line {

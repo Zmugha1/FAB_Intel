@@ -4,19 +4,22 @@ import { LogRow, Rules, Status, User, call } from "../ipc";
 import { BUSINESSES, bizName, money, pct, today } from "../format";
 import { SYSTEMS } from "../modules";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
-const FIELDS: { key: keyof Rules; label: string; kind: "pct" | "money" | "days" | "yesno" }[] = [
-  { key: "margin_floor_bp", label: "Margin floor", kind: "pct" },
-  { key: "approve_over_cents", label: "Owner approves quotes over", kind: "money" },
-  { key: "staff_quotes_need_owner", label: "Owner approves every staff quote", kind: "yesno" },
-  { key: "tax_rate_bp", label: "Sales tax rate", kind: "pct" },
-  { key: "quote_valid_days", label: "Quote holds for", kind: "days" },
-  { key: "follow_up_days", label: "Follow up on a sent quote after", kind: "days" },
+const FIELDS: { key: keyof Rules; label: string; kind: "pct" | "money" | "days" | "yesno"; tip: string }[] = [
+  { key: "margin_floor_bp", label: "Margin floor", kind: "pct", tip: "The lowest margin a quote can have without your approval. Margin is price minus vendor cost, divided by price. A quote under this goes to you before it can be sent." },
+  { key: "approve_over_cents", label: "Owner approves quotes over", kind: "money", tip: "Any quote whose total, tax included, is over this amount goes to you before it can be sent, even when you drafted it." },
+  { key: "staff_quotes_need_owner", label: "Owner approves every staff quote", kind: "yesno", tip: "Yes means every quote staff draft waits for you, whatever the margin or total. From your STZ interview." },
+  { key: "tax_rate_bp", label: "Sales tax rate", kind: "pct", tip: "Added to every quote line that has Tax ticked. Empty means you have not answered yet, and quotes show tax as Not set. Zero means you do not charge sales tax." },
+  { key: "staff_see_costs", label: "Staff see vendor costs and margins", kind: "yesno", tip: "No means staff enter prices only and never see your costs or margins. You check costs when their quotes come to you." },
+  { key: "quote_valid_days", label: "Quote holds for", kind: "days", tip: "How many days a sent quote stays good. The Morning Brief says when one is about to expire." },
+  { key: "follow_up_days", label: "Follow up on a sent quote after", kind: "days", tip: "Days after sending before a quote shows up in the Morning Brief as a follow-up." },
 ];
 
 function shown(r: Rules, f: (typeof FIELDS)[number]) {
   const v = r[f.key];
-  if (f.kind === "pct") return pct(v as number | null);
+  if (v === null) return f.key === "staff_see_costs" ? "Not answered (staff see them for now)" : "Not answered";
+  if (f.kind === "pct") return pct(v as number);
   if (f.kind === "money") return money(v as number);
   if (f.kind === "yesno") return v ? "Yes" : "No";
   return `${v} days`;
@@ -46,6 +49,7 @@ export default function RulesPage({ user, changed, status }: PageProps & { statu
     try {
       await fn();
       setOk(done);
+      window.setTimeout(() => setOk((now) => (now === done ? "" : now)), 3000);
       changed();
     } catch (e) {
       setMsg((e as Error).message);
@@ -66,7 +70,9 @@ export default function RulesPage({ user, changed, status }: PageProps & { statu
         <p className="sub">Your rules run the quotes and the Morning Brief. Every change is written to the decision log.</p>
       </div>
       {msg && <p className="err" role="alert">{msg}</p>}
-      {ok && <p className="okmsg">{ok}</p>}
+      {ok && <p className="okmsg toast" role="status">{ok}</p>}
+
+      {owner && rules.data && <Questions rules={rules.data} save={(key, value, done) => run(() => call("rule_set", { key, value }).then(rules.reload), done)} onError={setMsg} />}
 
       <div className="card">
         <h2>Your rules</h2>
@@ -74,7 +80,7 @@ export default function RulesPage({ user, changed, status }: PageProps & { statu
           <tbody>
             {rules.data && FIELDS.map((f) => (
               <tr key={f.key}>
-                <td>{f.label}</td>
+                <td>{f.label}<Tip text={f.tip} /></td>
                 <td>{shown(rules.data!, f)}</td>
                 {owner && (
                   <td>
@@ -94,7 +100,7 @@ export default function RulesPage({ user, changed, status }: PageProps & { statu
       {owner && <Users me={user} run={run} />}
 
       <div className="card">
-        <h2>Your systems</h2>
+        <h2>Your systems<Tip text="Planned means the connection is in your agreement but not built yet. Until then you enter or import these records by hand. Nothing is sent to these systems." /></h2>
         <p className="muted">Each connection is Planned until it is built and tested with your accounts.</p>
         <table className="tbl">
           <thead><tr><th>System</th><th>What it does for you</th><th>When</th><th>Status</th></tr></thead>
@@ -108,7 +114,7 @@ export default function RulesPage({ user, changed, status }: PageProps & { statu
 
       {owner && (
         <div className="card">
-          <h2>Sample data</h2>
+          <h2>Sample data<Tip text="Made-up businesses and figures for demos. They never count toward ROI, and Remove deletes only rows marked sample. Your own records are not touched." /></h2>
           <p className="muted">For showing FAB Intel without your real records. Every sample row is marked, and one click removes all of it.</p>
           <div className="row">
             {!status.sample && <button className="btn ghost" onClick={() => run(() => call("sample_load", { today: today() }), "Sample data loaded.")}>Load sample data</button>}
@@ -130,7 +136,7 @@ function Users({ me, run }: { me: User; run: (fn: () => Promise<unknown>, done: 
 
   return (
     <div className="card">
-      <h2>Users</h2>
+      <h2>Users<Tip text="Owner sees all three businesses, the ROI page, the rules and the decision log. Staff see only the businesses ticked for them. Passwords need at least 10 characters. Five wrong tries lock a sign-in for 5 minutes." /></h2>
       <p className="muted">Each person has their own sign-in. Staff see only the businesses ticked for them. There is no per-person fee.</p>
       <table className="tbl">
         <thead><tr><th>Name</th><th>Role</th><th>Businesses</th><th>Password</th><th></th></tr></thead>
@@ -168,7 +174,7 @@ function Log() {
   const { data } = useLoad<LogRow[]>("log_list");
   return (
     <div className="card scroll">
-      <h2>Decision log</h2>
+      <h2>Decision log<Tip text="Every change in FAB Intel: who did it, when, and what. It cannot be edited from the app." /></h2>
       <table className="tbl">
         <thead><tr><th>When</th><th>Who</th><th>What</th><th>Detail</th></tr></thead>
         <tbody>
@@ -177,6 +183,50 @@ function Log() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/** Owner answers that change how quotes behave. Each answer goes to the decision log and can be changed later. */
+function Questions({ rules, save, onError }: { rules: Rules; save: (key: string, value: string, done: string) => void; onError: (m: string) => void }) {
+  const [rate, setRate] = useState("");
+  const open = (rules.tax_rate_bp === null ? 1 : 0) + (rules.staff_see_costs === null ? 1 : 0);
+  const saveRate = () => {
+    const value = stored("pct", rate);
+    if (value === null) return onError("Enter the rate as a number, for example 5.5.");
+    save("tax_rate_bp", value, "Sales tax rate saved.");
+    setRate("");
+  };
+  const answered = (yes: boolean) => <span className={"pill " + (yes ? "ok" : "hold")}>{yes ? "Answered" : "Not answered"}</span>;
+
+  return (
+    <div className="card qcard">
+      <h2>Questions for you</h2>
+      <p className="muted">{open === 0 ? "All answered. Change an answer here any time." : `${open} ${open === 1 ? "question needs" : "questions need"} your answer before FAB Intel can price quotes the way you work.`}</p>
+
+      <div className="q">
+        <h3>1. What sales tax rate do you charge?{answered(rules.tax_rate_bp !== null)}<Tip text="Use your combined rate, state plus county, for where orders are delivered or picked up. Your accountant or the Wisconsin Department of Revenue can confirm it. On each quote you can untick Tax for a line that is not taxable." /></h3>
+        <p className="muted">{rules.tax_rate_bp === null ? "Not answered. Quotes show sales tax as Not set." : rules.tax_rate_bp === 0 ? "You do not charge sales tax. Quotes add no tax." : `Now ${pct(rules.tax_rate_bp)} on lines marked taxable.`}</p>
+        <div className="row">
+          <input className="in" style={{ width: 110 }} placeholder="e.g. 5.5" value={rate} onChange={(e) => setRate(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveRate()} aria-label="Sales tax rate in percent" />
+          <span className="muted">%</span>
+          <button className="btn" onClick={saveRate}>Save rate</button>
+          <button className="btn ghost" onClick={() => save("tax_rate_bp", "0", "Saved: no sales tax.")}>I do not charge sales tax</button>
+        </div>
+      </div>
+
+      <div className="q">
+        <h3>2. Should staff see vendor costs and margins?{answered(rules.staff_see_costs !== null)}<Tip text="Your STZ interview said staff price from vendor costs, so FAB Intel shows costs to staff until you answer. Either way, every staff quote still comes to you for approval." /></h3>
+        <label className="choice">
+          <input type="radio" name="staff_see_costs" checked={rules.staff_see_costs === true} onChange={() => save("staff_see_costs", "1", "Saved: staff see costs and margins.")} />
+          <span><b>Yes.</b> Staff type vendor costs and see the margin as they price. Quotes under your floor are flagged to them and to you.</span>
+        </label>
+        <label className="choice">
+          <input type="radio" name="staff_see_costs" checked={rules.staff_see_costs === false} onChange={() => save("staff_see_costs", "0", "Saved: costs and margins hidden from staff.")} />
+          <span><b>No.</b> Staff enter prices only. Costs and margins are hidden from them. When their quote comes to you, you add or check the costs before approving.</span>
+        </label>
+        {rules.staff_see_costs === null && <p className="muted">Not answered. Staff see costs and margins for now.</p>}
+      </div>
     </div>
   );
 }

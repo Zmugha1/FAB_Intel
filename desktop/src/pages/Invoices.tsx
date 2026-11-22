@@ -3,6 +3,7 @@ import { PageProps } from "../App";
 import { call, Contact, Invoice } from "../ipc";
 import { BUSINESSES, STATUS, addDays, bizName, money, toCents, today } from "../format";
 import { useLoad } from "./useLoad";
+import { Tip } from "../Tip";
 
 type Form = { id: number; contact_id: number; business: string; amount: string; repeat: string; due_date: string; pay_via: string; notes: string };
 
@@ -41,8 +42,8 @@ export default function Invoices({ user, biz, changed }: PageProps) {
       </div>
       {error && <p className="err">{error}</p>}
       <div className="grid g4">
-        <div className="card kpi"><span className="v">{money(unpaid)}</span><span className="l">Sent, not paid</span></div>
-        <div className="card kpi"><span className="v">{overdue.length}</span><span className="l">Overdue</span></div>
+        <div className="card kpi"><span className="v">{money(unpaid)}</span><span className="l">Sent, not paid<Tip text="Total of invoices marked sent and not yet marked paid. Drafts and voided invoices are left out." /></span></div>
+        <div className="card kpi"><span className="v">{overdue.length}</span><span className="l">Overdue<Tip text="Sent invoices past their due date. They also show in the Morning Brief." /></span></div>
         <div className="card kpi"><span className="v">{list.filter((i) => i.repeat !== "none" && i.status !== "void").length}</span><span className="l">Repeating (monthly, annual)</span></div>
       </div>
       <div className="row"><button className="btn" disabled={!contacts.data?.length} onClick={() => setForm({ id: 0, contact_id: 0, business: biz !== "all" ? biz : mine[0][0], amount: "", repeat: "none", due_date: addDays(today(), 15), pay_via: "", notes: "" })}>New invoice</button></div>
@@ -60,8 +61,8 @@ export default function Invoices({ user, biz, changed }: PageProps) {
             <div className="f"><label>Business</label><select className="in" value={form.business} onChange={(e) => setForm({ ...form, business: e.target.value })}>{mine.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></div>
             <div className="f"><label>Amount</label><input className="in" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} /></div>
             <div className="f"><label>Due</label><input type="date" className="in" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></div>
-            <div className="f"><label>Repeats</label><select className="in" value={form.repeat} onChange={(e) => setForm({ ...form, repeat: e.target.value })}><option value="none">No</option><option value="monthly">Monthly</option><option value="annual">Annual</option></select></div>
-            <div className="f"><label>Paid by</label><select className="in" value={form.pay_via} onChange={(e) => setForm({ ...form, pay_via: e.target.value })}><option value="">Not chosen</option><option>Stripe</option><option>Square</option><option>Zelle</option><option>Check</option></select></div>
+            <div className="f"><label>Repeats<Tip text="Marks a membership or retainer invoice as monthly or annual so it shows in the Repeating count. FAB Intel does not create the next invoice or charge anyone." /></label><select className="in" value={form.repeat} onChange={(e) => setForm({ ...form, repeat: e.target.value })}><option value="none">No</option><option value="monthly">Monthly</option><option value="annual">Annual</option></select></div>
+            <div className="f"><label>Paid by<Tip text="Where the customer paid. This is a note for your records. FAB Intel is not connected to Stripe, Square or Zelle yet, and it never stores card numbers." /></label><select className="in" value={form.pay_via} onChange={(e) => setForm({ ...form, pay_via: e.target.value })}><option value="">Not chosen</option><option>Stripe</option><option>Square</option><option>Zelle</option><option>Check</option></select></div>
           </div>
           <div className="row"><button className="btn" onClick={save}>Save draft</button><button className="btn ghost" onClick={() => setForm(null)}>Cancel</button></div>
         </div>

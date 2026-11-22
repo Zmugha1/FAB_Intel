@@ -142,3 +142,17 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--teal);outline-o
 .callout{border-left:4px solid var(--teal);background:var(--accentbg);padding:10px 12px;border-radius:6px;font-size:.86rem}
 .callout.hold{border-color:var(--hold);background:var(--holdbg)}
 .callout.warn{border-color:var(--warn);background:var(--warnbg)}
+/* Tooltips: a "?" beside a label. Text opens on hover, focus or tap. */
+.tip{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-left:5px;border:1px solid var(--muted);border-radius:50%;font-size:.68rem;font-weight:700;color:var(--muted);cursor:help;vertical-align:middle;user-select:none;flex:none}
+.tip:hover,.tip:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.tiptext{position:fixed;z-index:50;width:280px;padding:8px 10px;border-radius:6px;background:var(--head);color:var(--surface);font-size:.78rem;font-weight:400;line-height:1.45;text-align:left;text-transform:none;letter-spacing:0;box-shadow:0 4px 14px rgba(0,0,0,.18);white-space:normal;pointer-events:none}
+/* Questions for you: owner answers that change how the app behaves. */
+.qcard{border-left:3px solid var(--accent)}
+.q{padding:12px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0}
+.q h3{margin:0 0 4px;font-size:.95rem;color:var(--head);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.q p{margin:0 0 8px}
+.choice{display:flex;gap:8px;align-items:flex-start;padding:6px 0;cursor:pointer}
+.choice input{margin-top:3px}
+.sm{margin:12px 0 4px;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center}
+.toast{position:fixed;right:24px;bottom:56px;z-index:40;margin:0;padding:8px 14px;background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.12)}

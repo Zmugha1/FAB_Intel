@@ -16,15 +16,27 @@ pub struct Rules {
     pub tax_rate_bp: Option<i64>,
     pub quote_valid_days: i64,
     pub follow_up_days: i64,
+    /// Can staff see vendor costs and margins? None until the owner answers.
+    /// Unanswered behaves as yes, because the STZ interview says staff price from vendor costs.
+    pub staff_see_costs: Option<bool>,
 }
 
-pub const KEYS: [&str; 6] = [
+impl Rules {
+    pub fn staff_costs_visible(&self) -> bool {
+        self.staff_see_costs.unwrap_or(true)
+    }
+}
+
+pub const YES_NO: [&str; 2] = ["staff_quotes_need_owner", "staff_see_costs"];
+
+pub const KEYS: [&str; 7] = [
     "margin_floor_bp",
     "approve_over_cents",
     "staff_quotes_need_owner",
     "tax_rate_bp",
     "quote_valid_days",
     "follow_up_days",
+    "staff_see_costs",
 ];
 
 fn get(conn: &Connection, key: &str) -> Option<String> {
@@ -46,6 +58,7 @@ pub fn rules(conn: &Connection) -> Rules {
         tax_rate_bp: num(conn, "tax_rate_bp"),
         quote_valid_days: num(conn, "quote_valid_days").unwrap_or(14),
         follow_up_days: num(conn, "follow_up_days").unwrap_or(3),
+        staff_see_costs: get(conn, "staff_see_costs").map(|v| v != "0"),
     }
 }
 
@@ -56,7 +69,7 @@ pub fn set(conn: &Connection, owner: bool, key: &str, value: &str) -> Result<(),
     if !KEYS.contains(&key) {
         return Err("Unknown setting.".into());
     }
-    if key == "staff_quotes_need_owner" {
+    if YES_NO.contains(&key) {
         if value != "0" && value != "1" {
             return Err("Use 1 for yes or 0 for no.".into());
         }
@@ -90,6 +103,19 @@ mod tests {
         assert_eq!(r.approve_over_cents, 250_000);
         assert!(r.staff_quotes_need_owner);
         assert_eq!(r.tax_rate_bp, None);
+        assert_eq!(r.staff_see_costs, None);
+        assert!(r.staff_costs_visible());
+    }
+
+    #[test]
+    fn owner_answers_the_cost_question() {
+        let conn = open_memory().unwrap();
+        assert!(set(&conn, true, "staff_see_costs", "maybe").is_err());
+        set(&conn, true, "staff_see_costs", "0").unwrap();
+        assert_eq!(rules(&conn).staff_see_costs, Some(false));
+        assert!(!rules(&conn).staff_costs_visible());
+        set(&conn, true, "tax_rate_bp", "0").unwrap();
+        assert_eq!(rules(&conn).tax_rate_bp, Some(0));
     }
 
     #[test]
