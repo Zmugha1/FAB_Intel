@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "The main window. App commands are allowed by default in Tauri 2; each one checks the signed-in user.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
