@@ -1,0 +1,4 @@
+# The Hub release this client app is built on (Build Rules 2.1). Change only to move to a new release.
+repo = "https://github.com/Zmugha1/MVP_Hub.git"
+commit = "641a4deb4570fbe4fb484a54cfcea79a3325f7ae"
+version = "0.17.2"

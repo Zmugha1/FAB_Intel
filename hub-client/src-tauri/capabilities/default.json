@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "The main window. Hub commands are registered by the Hub and allowed for this window.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

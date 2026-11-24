@@ -1,0 +1,20 @@
+# Version source of truth: tauri.conf.json. Keep this, package.json and tauri.conf.json together.
+[package]
+name = "fab-intel"
+version = "0.2.0"
+description = "FAB Intel on the Dr. Data Hub"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# The pinned Hub release (hub.lock). The scripts check it out into .hub. Never edit it.
+hub-app = { path = "../.hub/crates/hub-app/src-tauri", default-features = false }
+tauri = { version = "2", features = [] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
