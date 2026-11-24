@@ -1,0 +1,14 @@
+# FAB Intel's own parts and pages (extension contract, R31a). Copied into the setup folder.
+provider = "fab_intel"
+
+[[part]]
+id = "ext.pricing"
+label = "Quote check"
+# The owner's holds and alerts on a quote (L4.1) and her approval point (L4.2).
+triggers = ["L4.1", "L4.2"]
+
+[[page]]
+id = "ext.pricing.quote_check"
+label = "Quote check"
+part = "ext.pricing"
+purpose = "Gross profit margin, holds, alerts and sales tax on one quote before it goes to the owner."
